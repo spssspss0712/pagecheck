@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   pull_request:
   schedule:
-    - cron: '0 16 * * 1'  // Run every Monday at 16:00 UTC
+    - cron: '0 16 * * 1'  
 
 jobs:
   test:
@@ -16,7 +16,8 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.9.6'
-    - run: python install -r requirements.txt
+    - run: python -m pip install --upgrade pip
+    - run: pip install -r requirements.txt
     - run: pytest -v
 
 
