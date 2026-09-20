@@ -3,10 +3,12 @@ from main import app
 
 client = TestClient(app)
 
+
 def test_health_returns_ok():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
 
 def test_create_check_returns_queued_job():
     response = client.post("/checks", json={"url": "https://example.com"})
@@ -17,9 +19,11 @@ def test_create_check_returns_queued_job():
     assert data["url"] == "https://example.com/"
     assert "created_at" in data
 
+
 def test_create_check_with_invalid_url_returns_422():
     response = client.post("/checks", json={"url": "abcd"})
     assert response.status_code == 422
+
 
 def test_get_check_returns_stored_record():
     create_response = client.post("/checks", json={"url": "https://example.com"})
@@ -34,5 +38,5 @@ def test_get_check_returns_stored_record():
 
 
 def test_get_check_with_unknown_id_returns_404():
-    response = client.get(f"checks/00000000-0000-0000-0000-000000000000")
+    response = client.get("/checks/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
