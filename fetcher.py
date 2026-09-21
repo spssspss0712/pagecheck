@@ -10,6 +10,8 @@ def fetch_page(url: str) -> str:
         response = httpx.get(url, timeout=10.0, follow_redirects=True)
     except httpx.TimeoutException as e:
         raise FetchError("timeout after 10s") from e
+    except httpx.ConnectError as e:
+        raise FetchError("connection failed") from e
     if response.status_code >= 400:
         raise FetchError(f"http {response.status_code}")
     if "text/html" not in response.headers.get("content-type", ""):
