@@ -15,7 +15,7 @@ def test_fetch_page_with_html_response_returns_body():
         mock_get.assert_called_once()
 
 
-def test_fetch_page_timeout_raises_fetch_error():
+def test_fetch_page_with_timeout_raises_fetch_error():
     with patch("fetcher.httpx.get") as mock_get:
         mock_get.side_effect = httpx.TimeoutException("timed out")
         with pytest.raises(FetchError):
