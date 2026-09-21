@@ -1,7 +1,8 @@
-from fastapi import FastAPI, status, HTTPException
+from fastapi import FastAPI, status, HTTPException, BackgroundTasks
 from pydantic import BaseModel, HttpUrl
 from datetime import datetime
 from uuid import uuid4
+from fetcher import fetch_page
 
 app = FastAPI(title="PageCheck", version="0.1.0")
 checks = {}
@@ -18,7 +19,7 @@ class CheckRequest(BaseModel):
 
 
 @app.post("/checks", status_code=status.HTTP_202_ACCEPTED)
-def create_check(request: CheckRequest):
+def create_check(request: CheckRequest, background_tasks: BackgroundTasks):
     """Create a check job and return it as queued."""
     url = request.url
     check_id = str(uuid4())
@@ -28,6 +29,7 @@ def create_check(request: CheckRequest):
         "url": url,
         "created_at": datetime.now(),
     }
+    background_tasks.add_task(run_check, check_id, str(url))
     return checks[check_id]
 
 
@@ -37,3 +39,8 @@ def get_check(check_id: str):
     if check_id not in checks:
         raise HTTPException(status_code=404, detail="ID not found")
     return checks[check_id]
+
+
+def run_check(check_id: str, url: str) -> None:
+    fetch_page(url)
+    checks[check_id]["status"] = "done"
