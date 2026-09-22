@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from main import app
 from unittest.mock import patch
+from fetcher import FetchError
 
 client = TestClient(app)
 
@@ -54,4 +55,16 @@ def test_create_check_with_reachable_page_marks_done():
         return_response = client.get(f"/checks/{create_data['id']}")
         return_data = return_response.json()
         assert return_data["status"] == "done"
+        mock_fetch.assert_called_once_with("https://example.com/")
+
+
+def test_create_check_with_fetch_error_marks_failed():
+    with patch("main.fetch_page") as mock_fetch:
+        mock_fetch.side_effect = FetchError("http 404")
+        create_result = client.post("/checks", json={"url": "https://example.com"})
+        create_data = create_result.json()
+        return_result = client.get(f"/checks/{create_data['id']}")
+        return_data = return_result.json()
+        assert return_data["status"] == "failed"
+        assert return_data["error"] == "http 404"
         mock_fetch.assert_called_once_with("https://example.com/")

@@ -2,7 +2,7 @@ from fastapi import FastAPI, status, HTTPException, BackgroundTasks
 from pydantic import BaseModel, HttpUrl
 from datetime import datetime
 from uuid import uuid4
-from fetcher import fetch_page
+from fetcher import fetch_page, FetchError
 
 app = FastAPI(title="PageCheck", version="0.1.0")
 checks = {}
@@ -42,5 +42,9 @@ def get_check(check_id: str):
 
 
 def run_check(check_id: str, url: str) -> None:
-    fetch_page(url)
-    checks[check_id]["status"] = "done"
+    try:
+        fetch_page(url)
+        checks[check_id]["status"] = "done"
+    except FetchError as e:
+        checks[check_id]["status"] = "failed"
+        checks[check_id]["error"] = str(e)
