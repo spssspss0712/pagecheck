@@ -42,6 +42,7 @@ def get_check(check_id: str):
 
 
 def run_check(check_id: str, url: str) -> None:
+    """Run a check to fetch page change status to done or failed"""
     try:
         fetch_page(url)
         checks[check_id]["status"] = "done"
