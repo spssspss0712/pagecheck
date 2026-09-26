@@ -13,4 +13,7 @@ def analyze_page(html_page: str) -> dict:
     if content is None or content.strip() == "":
         result["has_meta_description"] = False
 
+    h1_list = soup.find_all("h1")
+    result["h1_count"] = len(h1_list)
+
     return result

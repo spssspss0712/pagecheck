@@ -54,3 +54,20 @@ def test_analyze_page_with_meta_description_with_empty_content_return_false():
         "<html><head><meta name='description' content='     '></head><body></body></html>"
     )
     assert result["has_meta_description"] is False
+
+
+def test_analyze_page_no_h1_return_zero():
+    result = analyze_page("<html><head></head><body></body></html>")
+    assert result["h1_count"] == 0
+
+
+def test_analyze_page_with_one_h1_return_count():
+    result = analyze_page("<html><head></head><body><h1>this is h1</h1></body></html>")
+    assert result["h1_count"] == 1
+
+
+def test_analyze_page_with_two_h1_return_count():
+    result = analyze_page(
+        "<html><head></head><body><h1>this is h1</h1><h1>this is h1</h1></body></html>"
+    )
+    assert result["h1_count"] == 2
