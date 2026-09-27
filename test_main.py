@@ -67,4 +67,19 @@ def test_create_check_with_fetch_error_marks_failed():
         return_data = return_result.json()
         assert return_data["status"] == "failed"
         assert return_data["error"] == "http 404"
+        assert "result" not in return_data
         mock_fetch.assert_called_once_with("https://example.com/")
+
+
+def test_create_check_with_title_and_meta_return_true():
+    with patch("main.fetch_page") as mock_fetch:
+        mock_fetch.return_value = "<html><head><title>this is title</title><meta name='description' content='meta content'></head><body><h1>this is h1</h1></body></html>"
+        post_response = client.post("/checks", json={"url": "https://www.example.com/"})
+        post_result = post_response.json()
+        get_response = client.get(f"/checks/{post_result['id']}")
+        get_result = get_response.json()
+        analyze_result = get_result["result"]
+        assert analyze_result["has_title"] is True
+        assert analyze_result["has_meta_description"] is True
+        assert analyze_result["h1_count"] == 1
+        mock_fetch.assert_called_once_with("https://www.example.com/")

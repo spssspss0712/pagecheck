@@ -3,6 +3,7 @@ from pydantic import BaseModel, HttpUrl
 from datetime import datetime
 from uuid import uuid4
 from fetcher import fetch_page, FetchError
+from analyzer import analyze_page
 
 app = FastAPI(title="PageCheck", version="0.1.0")
 checks = {}
@@ -44,8 +45,10 @@ def get_check(check_id: str):
 def run_check(check_id: str, url: str) -> None:
     """Run a check to fetch page change status to done or failed"""
     try:
-        fetch_page(url)
+        html = fetch_page(url)
         checks[check_id]["status"] = "done"
+        checks[check_id]["result"] = analyze_page(html)
+
     except FetchError as e:
         checks[check_id]["status"] = "failed"
         checks[check_id]["error"] = str(e)
