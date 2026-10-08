@@ -1,12 +1,21 @@
 from fastapi import FastAPI, status, HTTPException, BackgroundTasks
+from fastapi.responses import RedirectResponse
+
 from pydantic import BaseModel, HttpUrl
 from datetime import datetime
 from uuid import uuid4
+
 from fetcher import fetch_page, FetchError
 from analyzer import analyze_page
 
 app = FastAPI(title="PageCheck", version="0.1.0")
 checks = {}
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    """Redirect root / to /docs"""
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
