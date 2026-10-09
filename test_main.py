@@ -89,3 +89,21 @@ def test_create_check_with_title_and_meta_return_true():
         assert analyze_result["has_meta_description"] is True
         assert analyze_result["h1_count"] == 1
         mock_fetch.assert_called_once_with("https://www.example.com/")
+
+
+def test_run_check_marks_failed_when_analyze_page_raises():
+    with patch("main.fetch_page") as mock_fetch:
+        mock_fetch.return_value = "<html></html>"
+        with patch("main.analyze_page") as mock_analyze:
+            mock_analyze.side_effect = ValueError("analyzer blew up")
+            create_response = client.post(
+                "/checks", json={"url": "https://www.example.com/"}
+            )
+            create_data = create_response.json()
+            return_response = client.get(f"/checks/{create_data['id']}")
+            return_data = return_response.json()
+            assert return_data["status"] == "failed"
+            assert "error" in return_data
+            assert "result" not in return_data
+            mock_fetch.assert_called_once_with("https://www.example.com/")
+            mock_analyze.assert_called_once()

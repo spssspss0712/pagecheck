@@ -55,9 +55,11 @@ def run_check(check_id: str, url: str) -> None:
     """Run a check to fetch page change status to done or failed"""
     try:
         html = fetch_page(url)
-        checks[check_id]["status"] = "done"
         checks[check_id]["result"] = analyze_page(html)
-
+        checks[check_id]["status"] = "done"
     except FetchError as e:
+        checks[check_id]["status"] = "failed"
+        checks[check_id]["error"] = str(e)
+    except Exception as e:
         checks[check_id]["status"] = "failed"
         checks[check_id]["error"] = str(e)
