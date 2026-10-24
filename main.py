@@ -1,4 +1,4 @@
-from fastapi import FastAPI, status, HTTPException, BackgroundTasks
+from fastapi import FastAPI, status, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import RedirectResponse
 
 from pydantic import BaseModel, HttpUrl
@@ -30,7 +30,7 @@ class CheckRequest(BaseModel):
 
 
 def to_dict(row):
-    """igore column which value is None"""
+    """ignore column which value is None"""
     result = {}
     for column in row.__table__.columns:
         attr = getattr(row, column.name)
@@ -39,29 +39,36 @@ def to_dict(row):
     return result
 
 
+def get_session():
+    with Session(engine) as session:
+        yield session
+
+
 @app.post("/checks", status_code=status.HTTP_202_ACCEPTED)
-def create_check(request: CheckRequest, background_tasks: BackgroundTasks):
+def create_check(
+    request: CheckRequest,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
     """Create a check job and return it as queued."""
     url = request.url
     check_id = str(uuid4())
-    with Session(engine) as session:
-        session.add(
-            Check(id=check_id, status="queued", url=str(url), created_at=datetime.now())
-        )
-        session.commit()
-        background_tasks.add_task(run_check, check_id, str(url))
-        check = session.get(Check, check_id)
-        return to_dict(check)
+    session.add(
+        Check(id=check_id, status="queued", url=str(url), created_at=datetime.now())
+    )
+    session.commit()
+    background_tasks.add_task(run_check, check_id, str(url))
+    check = session.get(Check, check_id)
+    return to_dict(check)
 
 
 @app.get("/checks/{check_id}")
-def get_check(check_id: str):
+def get_check(check_id: str, session: Session = Depends(get_session)):
     """Return check if id exists, or return 404 if id is not found"""
-    with Session(engine) as session:
-        check = session.get(Check, check_id)
-        if check is None:
-            raise HTTPException(status_code=404, detail="ID not found")
-        return to_dict(check)
+    check = session.get(Check, check_id)
+    if check is None:
+        raise HTTPException(status_code=404, detail="ID not found")
+    return to_dict(check)
 
 
 def run_check(check_id: str, url: str) -> None:
