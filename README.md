@@ -15,6 +15,8 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
+The first run creates `pagecheck.db` in the project directory. No configuration is
+needed; set `DATABASE_URL` to point at another database.
 
 ## API
 
@@ -101,17 +103,26 @@ dict; it performs no I/O. That is why the analyzer carries the largest test
 suite of the three modules — every case is a string in and a dict out, with no
 network and no mocking.
 
+**Check state lives in a database, not in the process.** `POST /checks` answers
+immediately and the background task writes the outcome later, so the two halves need
+somewhere they can both see. A dict in the process works until the process restarts —
+and it stops working entirely the moment the service runs more than one instance,
+because each one would only know about its own checks. The database is that shared
+place, and the application now keeps no state of its own between requests.
+
 ## Tests
 
 ```bash
 pytest
 ```
 
-25 tests cover the three modules separately: `analyzer` 12, `main` 8, `fetcher` 5. CI runs them on every push and
+30 tests cover the three modules separately: `analyzer` 12, `main` 13, `fetcher` 5. CI runs them on every push and
 pull request, plus weekly on a schedule to catch dependency drift.
 
 ## Not yet
 
-- Results are held in memory, so they are lost on restart.
+- Results now persist in a database, but the hosted instance keeps its SQLite file on an
+  ephemeral filesystem: the free tier spins down after 15 minutes idle and wipes it. A
+  hosted Postgres is the next step.
 - No limit on concurrent checks.
 - No LLM-based scoring of page content.
