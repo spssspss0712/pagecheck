@@ -110,6 +110,10 @@ and it stops working entirely the moment the service runs more than one instance
 because each one would only know about its own checks. The database is that shared
 place, and the application now keeps no state of its own between requests.
 
+Storage is addressed only by a connection string, so the same code runs on SQLite
+locally and on hosted Postgres in production — the tests point at their own SQLite
+file through `DATABASE_URL`, set in `conftest.py`.
+
 ## Tests
 
 ```bash
@@ -121,8 +125,5 @@ pull request, plus weekly on a schedule to catch dependency drift.
 
 ## Not yet
 
-- Results now persist in a database, but the hosted instance keeps its SQLite file on an
-  ephemeral filesystem: the free tier spins down after 15 minutes idle and wipes it. A
-  hosted Postgres is the next step.
 - No limit on concurrent checks.
 - No LLM-based scoring of page content.

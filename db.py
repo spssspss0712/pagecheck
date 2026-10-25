@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 db_url = os.getenv("DATABASE_URL", "sqlite:///./pagecheck.db")
-engine = create_engine(db_url, echo=True)
+engine = create_engine(db_url, echo=True, pool_pre_ping=True)
 
 
 class Base(DeclarativeBase):
