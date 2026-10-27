@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import RedirectResponse
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.orm import Session
@@ -29,14 +29,14 @@ class CheckRequest(BaseModel):
     url: HttpUrl
 
 
-def to_dict(row):
-    """ignore column which value is None"""
-    result = {}
-    for column in row.__table__.columns:
-        attr = getattr(row, column.name)
-        if attr is not None:
-            result[column.name] = attr
-    return result
+class CheckOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    status: str
+    url: str
+    created_at: datetime
+    result: dict | None = None
+    error: str | None = None
 
 
 def get_session():
@@ -44,7 +44,12 @@ def get_session():
         yield session
 
 
-@app.post("/checks", status_code=status.HTTP_202_ACCEPTED)
+@app.post(
+    "/checks",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=CheckOut,
+    response_model_exclude_none=True,
+)
 def create_check(
     request: CheckRequest,
     background_tasks: BackgroundTasks,
@@ -59,16 +64,18 @@ def create_check(
     session.commit()
     background_tasks.add_task(run_check, check_id, str(url))
     check = session.get(Check, check_id)
-    return to_dict(check)
+    return check
 
 
-@app.get("/checks/{check_id}")
+@app.get(
+    "/checks/{check_id}", response_model=CheckOut, response_model_exclude_none=True
+)
 def get_check(check_id: str, session: Session = Depends(get_session)):
     """Return check if id exists, or return 404 if id is not found"""
     check = session.get(Check, check_id)
     if check is None:
         raise HTTPException(status_code=404, detail="ID not found")
-    return to_dict(check)
+    return check
 
 
 def run_check(check_id: str, url: str) -> None:

@@ -1,9 +1,8 @@
 from fastapi.testclient import TestClient
 from datetime import datetime
-from main import app, to_dict
+from main import app
 from unittest.mock import patch
 from fetcher import FetchError
-from db import Check
 
 client = TestClient(app)
 
@@ -109,46 +108,3 @@ def test_run_check_marks_failed_when_analyze_page_raises():
             assert "result" not in return_data
             mock_fetch.assert_called_once_with("https://www.example.com/")
             mock_analyze.assert_called_once()
-
-
-def test_to_dict_omits_none_columns():
-    row = Check(
-        id="n5",
-        status="queued",
-        url="https://www.example.com/",
-        created_at=datetime.now(),
-        result=None,
-        error=None,
-    )
-    result_dict = to_dict(row)
-    assert set(result_dict) == {"id", "status", "url", "created_at"}
-    assert "result" not in result_dict
-    assert "error" not in result_dict
-
-
-def test_to_dict_keeps_result_when_present():
-    row = Check(
-        id="n5",
-        status="done",
-        url="https://www.example.com/",
-        created_at=datetime.now(),
-        result={"has_title": True, "has_meta_description": True, "h1_count": 0},
-        error=None,
-    )
-    result_dict = to_dict(row)
-    assert set(result_dict) == {"id", "status", "url", "created_at", "result"}
-    assert "error" not in result_dict
-
-
-def test_to_dict_keeps_error_when_present():
-    row = Check(
-        id="n5",
-        status="failed",
-        url="https://www.example.com/",
-        created_at=datetime.now(),
-        result=None,
-        error="page is not html",
-    )
-    result_dict = to_dict(row)
-    assert set(result_dict) == {"id", "status", "url", "created_at", "error"}
-    assert "result" not in result_dict
