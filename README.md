@@ -114,14 +114,16 @@ Storage is addressed only by a connection string, so the same code runs on SQLit
 locally and on hosted Postgres in production — the tests point at their own SQLite
 file through `DATABASE_URL`, set in `conftest.py`.
 
+The response is declared by a Pydantic output model, not assembled by hand. FastAPI filters the returned fields against it, and /docs shows their names and types.
+
 ## Tests
 
 ```bash
 pytest
 ```
 
-30 tests cover the three modules separately: `analyzer` 12, `main` 13, `fetcher` 5. CI runs them on every push and
-pull request, plus weekly on a schedule to catch dependency drift.
+27 tests cover the three modules separately: `analyzer` 12, `main` 10, `fetcher` 5. CI runs them on every push and pull request, plus weekly on a schedule to catch dependency drift.
+The count dropped from 30 when to_dict was replaced by a Pydantic output model: its three unit tests went with it, and the behaviour they covered is still asserted by the endpoint tests.
 
 ## Not yet
 
